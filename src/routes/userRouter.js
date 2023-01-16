@@ -5,10 +5,23 @@ import jwt from "jsonwebtoken";
 
 import User from "../models/user.js";
 import {JWT_SECRET} from "../utils/config.js";
-import {validateErrors} from "../utils/middleware.js";
+import {tokenExtractor, tokenValidator, validateErrors} from "../utils/middleware.js";
 
 
 const userRouter = Router()
+
+userRouter.get('/',
+	tokenExtractor,
+	tokenValidator,
+	async (request, response, next) => {
+		validateErrors(request, response, next)
+
+		if (response.headersSent) {
+			return
+		}
+
+		return response.json({message: 'valid token'})
+	})
 
 userRouter.post('/signup',
 	body('username')
@@ -20,7 +33,7 @@ userRouter.post('/signup',
 	async (request, response, next) => {
 		validateErrors(request, response, next)
 
-		if(response.headersSent) {
+		if (response.headersSent) {
 			return
 		}
 
@@ -44,7 +57,7 @@ userRouter.post('/login',
 	async (request, response, next) => {
 		validateErrors(request, response, next)
 
-		if(response.headersSent) {
+		if (response.headersSent) {
 			return
 		}
 
