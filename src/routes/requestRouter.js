@@ -11,7 +11,13 @@ requestRouter.get('/',
 	tokenExtractor,
 	tokenValidator,
 	async (request, response, next) => {
-		const requests = await Request.find({}).populate('headers')
+
+		const decodedToken = validateToken(request, response, next)
+		if (response.headersSent) {
+			return
+		}
+
+		const requests = await Request.find({userId: decodedToken.id}).populate('headers')
 		response.json(requests)
 	}
 )
@@ -67,6 +73,7 @@ requestRouter.post('/:id',
 				type: '',
 				body: '',
 				headers: [],
+				userId: decodedToken.id
 			})
 			const savedRequest = await newRequest.save()
 			return response.status(201).json(savedRequest)
