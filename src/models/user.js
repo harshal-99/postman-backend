@@ -1,28 +1,26 @@
-import uniqueValidator from 'mongoose-unique-validator'
-import mongoose from "mongoose";
+import {DataTypes, Model} from "sequelize";
+import {sequelize} from "../utils/db.js";
 
-const userSchema = new mongoose.Schema({
-	username: {
-		type: String,
-		unique: true,
-		minlength: 3,
-		required: true
+class User extends Model {
+}
+
+User.init({
+	id: {
+		type: DataTypes.INTEGER,
+		autoIncrement: true,
+		primaryKey: true,
 	},
-	passwordHash: {
-		type: String, required: true
+	username: {
+		type: DataTypes.STRING,
+		allowNull: false,
+		unique: true,
+	},
+	password: {
+		type: DataTypes.STRING,
+		allowNull: false,
 	}
+}, {
+	sequelize,
 })
-
-userSchema.set("toJSON", {
-	transform: (document, returnedObject) => {
-		returnedObject.id = returnedObject._id.toString()
-		delete returnedObject._id
-		delete returnedObject.__v
-	}
-})
-
-userSchema.plugin(uniqueValidator)
-
-const User = mongoose.model("User", userSchema)
 
 export default User

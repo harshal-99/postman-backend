@@ -3,14 +3,14 @@ import cors from 'cors';
 import morgan from 'morgan';
 import "express-async-errors";
 
-import {configureDB} from "./utils/config.js";
-import {errorHandler, tokenExtractor, tokenValidator, unknownEndpoint, validateToken} from "./utils/middleware.js";
-import userRouter from "./routes/userRouter.js";
-import requestRouter from "./routes/requestRouter.js";
+import {errorHandler, unknownEndpoint} from "./utils/middleware.js";
+import userRouter from "./controller/userRouter.js";
+import requestRouter from "./controller/requestRouter.js";
+import {connectToDatabase} from "./utils/db.js";
 
 const app = express()
 
-await configureDB()
+await connectToDatabase()
 
 app.use(cors())
 app.use(express.json())

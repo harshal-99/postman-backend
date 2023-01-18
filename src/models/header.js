@@ -1,28 +1,30 @@
-import mongoose from "mongoose";
+import {DataTypes, Model} from "sequelize";
+import {sequelize} from "../utils/db.js";
 
-const headerSchema = new mongoose.Schema({
+class Header extends Model {
+}
+
+Header.init({
+	id: {
+		type: DataTypes.INTEGER,
+		autoIncrement: true,
+		primaryKey: true
+	},
 	key: {
-		type: String,
+		type: DataTypes.STRING,
+		allowNull: false,
 		defaultValue: '',
 	},
 	value: {
-		type: String,
+		type: DataTypes.STRING,
+		allowNull: false,
 		defaultValue: '',
 	},
 	checked: {
-		type: Boolean,
+		type: DataTypes.BOOLEAN,
+		allowNull: false,
 		defaultValue: false,
 	}
-})
-
-headerSchema.set("toJSON", {
-	transform: (document, returnedObject) => {
-		returnedObject.id = returnedObject._id.toString()
-		delete returnedObject._id
-		delete returnedObject.__v
-	}
-})
-
-const Header = mongoose.model("Header", headerSchema)
+}, {sequelize})
 
 export default Header

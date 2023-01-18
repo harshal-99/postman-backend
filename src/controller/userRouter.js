@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import {body} from "express-validator";
 import jwt from "jsonwebtoken";
 
-import User from "../models/user.js";
+import {User} from "../models/index.js";
 import {JWT_SECRET} from "../utils/config.js";
 import {tokenExtractor, tokenValidator, validateErrors} from "../utils/middleware.js";
 
@@ -42,13 +42,12 @@ userRouter.post('/signup',
 		const saltRounds = 5
 		const passwordHash = await bcrypt.hash(password, saltRounds)
 
-		const user = new User({
+		const user = await User.create({
 			username,
-			passwordHash
+			password: passwordHash
 		})
 
-		const savedUser = await user.save()
-		response.json({username: savedUser.username, id: savedUser.id})
+		response.json({username: user.username, id: user.id})
 	})
 
 userRouter.post('/login',
@@ -63,19 +62,19 @@ userRouter.post('/login',
 
 		const {username, password} = request.body
 
-		const user = await User.findOne({username})
+		let user = await User.findOne({where: {username: username}})
 		if (!user) {
 			return response.status(401).json({error: 'invalid username or password'})
 		}
-
-		const passwordCorrect = await bcrypt.compare(password, user.passwordHash)
+		user = user.toJSON()
+		const passwordCorrect = await bcrypt.compare(password, user.password)
 		if (!passwordCorrect) {
 			return response.status(401).json({error: 'invalid username or password'})
 		}
 
 		const userForToken = {
 			username: user.username,
-			id: user._id
+			id: user.id
 		}
 
 		const token = jwt.sign(userForToken, JWT_SECRET, {expiresIn: 60 * 60})

@@ -1,38 +1,30 @@
-import mongoose from "mongoose";
+import {DataTypes, Model} from "sequelize";
+import {sequelize} from "../utils/db.js";
 
-const requestSchema = new mongoose.Schema({
+class Request extends Model {
+}
+
+Request.init({
+	id: {
+		type: DataTypes.INTEGER,
+		autoIncrement: true,
+		primaryKey: true
+	},
 	url: {
-		type: String,
+		type: DataTypes.STRING,
+		allowNull: false,
 		defaultValue: '',
 	},
 	type: {
-		type: String,
+		type: DataTypes.STRING,
+		allowNull: false,
 		defaultValue: '',
 	},
 	body: {
-		type: String,
+		type: DataTypes.STRING,
+		allowNull: false,
 		defaultValue: '',
-	},
-	headers: [
-		{
-			type: mongoose.Schema.Types.ObjectId,
-			ref: "Header"
-		}
-	],
-	userId: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: "User"
 	}
-})
-
-requestSchema.set('toJSON', {
-	transform: (document, returnedObject) => {
-		returnedObject.id = returnedObject._id.toString()
-		delete returnedObject._id
-		delete returnedObject.__v
-	}
-})
-
-const Request = mongoose.model('Request', requestSchema)
+}, {sequelize})
 
 export default Request

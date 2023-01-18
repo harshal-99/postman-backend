@@ -1,6 +1,6 @@
 import {Router} from "express";
-import {tokenExtractor, tokenValidator, validateErrors, validateToken} from "../utils/middleware.js";
-import {body, param, query} from "express-validator";
+import {tokenExtractor, tokenValidator, validateToken} from "../utils/middleware.js";
+import {body, param} from "express-validator";
 import User from "../models/user.js";
 import Request from "../models/request.js";
 import Header from "../models/header.js";
@@ -23,23 +23,17 @@ requestRouter.get('/',
 )
 
 requestRouter.get('/:id',
-	param('id').isMongoId(),
 	async (request, response, next) => {
-		validateErrors(request, response, next)
-
-		if (response.headersSent) {
-			return
-		}
 
 		const requestId = request.params.id
-		const foundRequest = await Request
-			.findById(requestId)
-			.populate('headers')
+		let foundRequest = await Request.findByPk(requestId)
 
 		if (!foundRequest) {
 			return response.status(404).json({error: 'request not found'})
 		}
-
+		const savedHeaders = await Header.findAll({where: {RequestId: requestId}})
+		foundRequest = foundRequest.toJSON()
+		foundRequest.headers = savedHeaders
 		return response.json(foundRequest)
 	}
 )
@@ -47,11 +41,6 @@ requestRouter.get('/:id',
 requestRouter.post('/:id',
 	tokenExtractor,
 	tokenValidator,
-	param('id').notEmpty(),
-	body('url').isString(),
-	body('type').isString(),
-	body('body').isString(),
-	body('headers').isArray(),
 	async (request, response, next) => {
 		const decodedToken = validateToken(request, response, next)
 
@@ -59,7 +48,7 @@ requestRouter.post('/:id',
 			return
 		}
 
-		const user = User.findById(decodedToken.id)
+		const user = User.findByPk(decodedToken.id)
 
 		if (!user) {
 			return response.status(401).json({error: 'invalid user'})
@@ -68,31 +57,44 @@ requestRouter.post('/:id',
 		const requestId = request.params.id
 
 		if (requestId === '0') {
-			const newRequest = new Request({
+			const newRequest = await Request.create({
 				url: '',
 				type: '',
 				body: '',
-				headers: [],
-				userId: decodedToken.id
+				UserId: decodedToken.id
 			})
 			const savedRequest = await newRequest.save()
 			return response.status(201).json(savedRequest)
 		}
 
-		let foundRequest = await Request.findById(requestId)
+		let foundRequest = await Request.findByPk(requestId)
 
 		if (!foundRequest) {
 			return response.status(404).json({error: 'request not found'})
 		}
 
-		const {url, type, body} = request.body
+		let {url, type, body, headers} = request.body
 
-		foundRequest.url = url
-		foundRequest.type = type
-		foundRequest.body = body
+		foundRequest.url = url || ''
+		foundRequest.type = type || ''
+		foundRequest.body = body || ''
 
-		const savedRequest = await foundRequest.save()
-
+		let savedRequest = await foundRequest.save()
+		headers ||= []
+		for (const header of headers) {
+			await Header.update({key: header.key || '', value: header.value || '', checked: header.checked}, {
+				where: {
+					id: header.id
+				}
+			})
+		}
+		savedRequest = savedRequest.toJSON()
+		let savedHeaders = await Header.findAll({
+			where: {
+				RequestId: savedRequest.id
+			}
+		})
+		savedRequest.headers = savedHeaders
 		return response.json(savedRequest)
 	}
 )
@@ -108,7 +110,7 @@ requestRouter.delete('/:id',
 			return
 		}
 
-		const user = User.findById(decodedToken.id)
+		const user = User.findByPk(decodedToken.id)
 
 		if (!user) {
 			return response.status(401).json({error: 'invalid user'})
@@ -116,7 +118,13 @@ requestRouter.delete('/:id',
 
 		const requestId = request.params.id
 
-		await Request.findByIdAndDelete(requestId)
+		const savedRequest = await Request.findByPk(requestId)
+
+		const savedHeaders = await Header.find({RequestId: savedRequest.id})
+		for (const header of savedHeaders) {
+			await header.destroy()
+		}
+		await savedRequest.destroy()
 		return response.status(204).end()
 	}
 )
@@ -137,7 +145,7 @@ requestRouter.post('/:id/header/:headerId',
 			return
 		}
 
-		const user = User.findById(decodedToken.id)
+		const user = User.findByPk(decodedToken.id)
 
 		if (!user) {
 			return response.status(401).json({error: 'invalid user'})
@@ -145,37 +153,23 @@ requestRouter.post('/:id/header/:headerId',
 
 		const requestId = request.params.id
 		const headerId = request.params.headerId
-		const foundRequest = await Request.findById(requestId)
+		const foundRequest = await Request.findByPk(requestId)
 
 		if (!foundRequest) {
 			return response.status(404).json({error: 'request not found'})
 		}
 
 		if (headerId === '0') {
-			const newHeader = new Header({
+			const newHeader = await Header.create({
 				key: '',
 				value: '',
 				checked: false,
+				RequestId: requestId,
 			})
-			const savedHeader = await newHeader.save()
-			foundRequest.headers.push(savedHeader)
-			const savedRequest = await foundRequest.save()
-			return response.status(201).json(savedRequest)
-		} else {
-			const foundHeader = await Header.findById(headerId)
 
-			if (!foundHeader) {
-				return response.status(404).json({error: 'header not found'})
-			}
-
-			const {key, value, checked} = request.body
-			foundHeader.key = key
-			foundHeader.value = value
-			foundHeader.checked = checked
-			await foundHeader.save()
-			const savedRequest = await foundRequest.save()
-			return response.json(savedRequest)
+			return response.status(201).json(newHeader)
 		}
+		return response.end()
 	}
 )
 
@@ -191,19 +185,16 @@ requestRouter.delete('/:id/header/:headerId',
 			return
 		}
 
-		const user = User.findById(decodedToken.id)
+		const user = User.findByPk(decodedToken.id)
 
 		if (!user) {
 			return response.status(401).json({error: 'invalid user'})
 		}
 
-		const requestId = request.params.id
 		const headerId = request.params.headerId
-		const foundRequest = await Request.findById(requestId)
-		foundRequest.headers = foundRequest.headers.filter(header => header.id !== headerId)
-		const savedRequest = await foundRequest.save()
-		await Header.findByIdAndDelete(headerId)
-		return response.status(204).send(savedRequest)
+		const savedHeader = await Header.findByPk(headerId)
+		await savedHeader.destroy()
+		return response.status(204).end()
 	})
 
 export default requestRouter
