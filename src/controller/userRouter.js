@@ -1,11 +1,10 @@
 import {Router} from "express";
 import bcrypt from "bcrypt";
-import {body} from "express-validator";
 import jwt from "jsonwebtoken";
 
 import {User} from "../models/index.js";
 import {JWT_SECRET} from "../utils/config.js";
-import {tokenExtractor, tokenValidator, validateErrors} from "../utils/middleware.js";
+import {tokenExtractor, tokenValidator} from "../utils/middleware.js";
 
 
 const userRouter = Router()
@@ -14,29 +13,11 @@ userRouter.get('/',
 	tokenExtractor,
 	tokenValidator,
 	async (request, response, next) => {
-		validateErrors(request, response, next)
-
-		if (response.headersSent) {
-			return
-		}
-
 		return response.json({message: 'valid token'})
 	})
 
 userRouter.post('/signup',
-	body('username')
-		.escape().trim().isLength({min: 3})
-		.withMessage('username must be at least 3 characters long'),
-	body('password')
-		.escape().trim().isLength({min: 3})
-		.withMessage('password must be at least 3 characters long'),
 	async (request, response, next) => {
-		validateErrors(request, response, next)
-
-		if (response.headersSent) {
-			return
-		}
-
 		const {username, password} = request.body
 
 		const saltRounds = 5
@@ -51,14 +32,7 @@ userRouter.post('/signup',
 	})
 
 userRouter.post('/login',
-	body('username').escape().isString().trim(),
-	body('password').escape().isString().trim(),
 	async (request, response, next) => {
-		validateErrors(request, response, next)
-
-		if (response.headersSent) {
-			return
-		}
 
 		const {username, password} = request.body
 
