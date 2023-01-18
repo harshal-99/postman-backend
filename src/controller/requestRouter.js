@@ -15,7 +15,9 @@ requestRouter.get('/',
 			return
 		}
 
-		const requests = await Request.find({userId: decodedToken.id}).populate('headers')
+		const requests = await Request.findAll({where: {
+				UserId: decodedToken.id
+			}})
 		response.json(requests)
 	}
 )
