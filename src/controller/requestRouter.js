@@ -14,10 +14,16 @@ requestRouter.get('/',
 			return
 		}
 
-		const requests = await Request.findAll({where: {
+		const requests = await Request.findAll({
+			where: {
 				UserId: decodedToken.id
-			}})
-		response.json(requests)
+			}
+		})
+		let reqs = requests.map(req => req.toJSON()).map(req => {
+			req.headers = []
+			return req
+		})
+		response.json(reqs)
 	}
 )
 
@@ -118,7 +124,7 @@ requestRouter.delete('/:id',
 
 		const savedRequest = await Request.findByPk(requestId)
 
-		const savedHeaders = await Header.find({RequestId: savedRequest.id})
+		const savedHeaders = await Header.findAll({where: {RequestId: savedRequest.id}})
 		for (const header of savedHeaders) {
 			await header.destroy()
 		}

@@ -5,6 +5,7 @@ import {errorHandler, unknownEndpoint} from "./utils/middleware.js";
 import userRouter from "./controller/userRouter.js";
 import requestRouter from "./controller/requestRouter.js";
 import {connectToDatabase} from "./utils/db.js";
+import morgan from "morgan";
 
 const app = express()
 
@@ -13,7 +14,7 @@ await connectToDatabase()
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
-
+app.use(morgan('dev'))
 app.use('/api/auth', userRouter)
 
 app.use('/api/request', requestRouter)
