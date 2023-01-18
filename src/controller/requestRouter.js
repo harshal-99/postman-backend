@@ -1,9 +1,7 @@
 import {Router} from "express";
 import {tokenExtractor, tokenValidator, validateToken} from "../utils/middleware.js";
 import {body, param} from "express-validator";
-import User from "../models/user.js";
-import Request from "../models/request.js";
-import Header from "../models/header.js";
+import {User, Request, Header} from "../models/index.js";
 
 const requestRouter = Router()
 
