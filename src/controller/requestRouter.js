@@ -1,6 +1,5 @@
 import {Router} from "express";
 import {tokenExtractor, tokenValidator, validateToken} from "../utils/middleware.js";
-import {body, param} from "express-validator";
 import {User, Request, Header} from "../models/index.js";
 
 const requestRouter = Router()
@@ -102,7 +101,6 @@ requestRouter.post('/:id',
 requestRouter.delete('/:id',
 	tokenExtractor,
 	tokenValidator,
-	param('id').isMongoId(),
 	async (request, response, next) => {
 		const decodedToken = validateToken(request, response, next)
 
@@ -133,11 +131,6 @@ requestRouter.delete('/:id',
 requestRouter.post('/:id/header/:headerId',
 	tokenExtractor,
 	tokenValidator,
-	param('id').isMongoId(),
-	param('headerId').notEmpty(),
-	body('key').notEmpty().isString(),
-	body('value').notEmpty().isString(),
-	body('checked').notEmpty().isBoolean(),
 	async (request, response, next) => {
 		const decodedToken = validateToken(request, response, next)
 
@@ -176,8 +169,6 @@ requestRouter.post('/:id/header/:headerId',
 requestRouter.delete('/:id/header/:headerId',
 	tokenExtractor,
 	tokenValidator,
-	param('id').isMongoId(),
-	param('headerId').isMongoId(),
 	async (request, response, next) => {
 		const decodedToken = validateToken(request, response, next)
 
