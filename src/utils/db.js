@@ -1,9 +1,9 @@
 import {Sequelize} from "sequelize"
-import {DATABASE_URL} from "./config.js";
 
-export const sequelize = new Sequelize(DATABASE_URL, {
-	logging: console.log
-})
+export const sequelize = new Sequelize("test-db","user","pass",{
+  dialect:"sqlite",
+  host:"./config/db.sqlite",
+});
 
 export const connectToDatabase = async () => {
 	try {
