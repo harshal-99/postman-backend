@@ -23,6 +23,14 @@ requestRouter.get('/',
 			req.headers = []
 			return req
 		})
+		for(const req of reqs) {
+			const headers = await Header.findAll({
+				where: {
+					RequestId: req.id
+				}
+			})
+			req.headers = headers.map(header => header.toJSON())
+		}
 		response.json(reqs)
 	}
 )
